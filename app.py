@@ -20,6 +20,17 @@ st.set_page_config(page_title="Dashboard Rekomendasi Saham IDX", layout="wide")
 
 WATCHLIST = ["ADRO", "PTBA", "BMRI", "CDIA", "CUAN", "BRPT", "CPRO", "ANTM", "BBRM"]
 
+# Saham likuid/blue chip IDX (LQ45 & sejenis) biar pengguna lain bisa pilih saham sendiri,
+# bukan cuma watchlist personal di atas.
+ALL_TICKERS = sorted(set(WATCHLIST + [
+    "BBCA", "BBRI", "BBNI", "TLKM", "ASII", "UNVR", "ICBP", "INDF", "KLBF", "UNTR",
+    "PGAS", "MDKA", "INCO", "TINS", "SMGR", "INTP", "SIDO", "CPIN", "JPFA", "AALI",
+    "LSIP", "GGRM", "HMSP", "WIKA", "WSKT", "PTPP", "ADHI", "JSMR", "EXCL", "ISAT",
+    "TOWR", "TBIG", "MNCN", "SCMA", "MAPI", "ACES", "ERAA", "MYOR", "ULTJ", "TSPC",
+    "ROTI", "BSDE", "CTRA", "PWON", "SMRA", "AMRT", "BUKA", "GOTO", "EMTK", "MEDC",
+    "ELSA", "ITMG", "HRUM", "BRIS", "BBTN", "ARTO", "TPIA", "AKRA", "INKP", "TKIM",
+]))
+
 # ==========================================================
 # DESIGN TOKENS
 # ==========================================================
@@ -741,7 +752,8 @@ if interval == "1wk" and period in ("3mo", "6mo"):
         "MA50 & sinyal bisa muncul 'DATA KURANG'. Pilih periode 1y/2y untuk hasil optimal."
     )
 selected_tickers = st.sidebar.multiselect(
-    "Watchlist", WATCHLIST, default=WATCHLIST
+    "Watchlist", ALL_TICKERS, default=WATCHLIST,
+    help="Default watchlist di atas cuma contoh punya saya. Tambah/ganti sesuai saham kamu sendiri!",
 )
 
 HOLD_LABELS = {5: "5 Candle", 10: "10 Candle", 20: "20 Candle"}
