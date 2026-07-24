@@ -720,36 +720,56 @@ page = st.sidebar.selectbox("Halaman", PAGES, index=0, label_visibility="collaps
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("⚙️ Pengaturan")
-PERIOD_LABELS = {
-    "3mo": "3 Bulan Terakhir",
-    "6mo": "6 Bulan Terakhir",
-    "1y": "1 Tahun Terakhir",
-    "2y": "2 Tahun Terakhir",
-}
+
+INTERVAL_LABELS = {"1h": "1 Jam", "1d": "Harian", "1wk": "Mingguan"}
+interval_label = st.sidebar.selectbox(
+    "Interval candle",
+    list(INTERVAL_LABELS.values()),
+    index=1,
+    help="1 Jam = tiap candle 1 jam bursa (data terbatas maks ~60 hari terakhir, "
+    "sesuai batas Yahoo Finance). Harian = tiap candle 1 hari bursa. Mingguan = tiap "
+    "candle 1 minggu (candle lebih sedikit, cocok untuk lihat tren jangka panjang).",
+)
+interval = {v: k for k, v in INTERVAL_LABELS.items()}[interval_label]
+
+if interval == "1h":
+    PERIOD_LABELS = {
+        "5d": "5 Hari Terakhir",
+        "1mo": "1 Bulan Terakhir",
+        "2mo": "2 Bulan Terakhir",
+    }
+    default_period_idx = 2
+    st.sidebar.caption(
+        "ℹ️ Interval 1 Jam cuma nyediain data maks ~60 hari terakhir (limitasi Yahoo Finance)."
+    )
+else:
+    PERIOD_LABELS = {
+        "3mo": "3 Bulan Terakhir",
+        "6mo": "6 Bulan Terakhir",
+        "1y": "1 Tahun Terakhir",
+        "2y": "2 Tahun Terakhir",
+    }
+    default_period_idx = 1
+
 period_label = st.sidebar.selectbox(
     "Periode data",
     list(PERIOD_LABELS.values()),
-    index=1,
+    index=default_period_idx,
     help="Rentang histori harga yang diambil. Semakin panjang, MA20/MA50 makin akurat "
     "tapi chart makin padat dan load makin lama.",
 )
 period = {v: k for k, v in PERIOD_LABELS.items()}[period_label]
-
-INTERVAL_LABELS = {"1d": "Harian", "1wk": "Mingguan"}
-interval_label = st.sidebar.selectbox(
-    "Interval candle",
-    list(INTERVAL_LABELS.values()),
-    index=0,
-    help="Harian = tiap candle 1 hari bursa. Mingguan = tiap candle 1 minggu "
-    "(candle lebih sedikit, cocok untuk lihat tren jangka panjang, kurang cocok untuk periode pendek).",
-)
-interval = {v: k for k, v in INTERVAL_LABELS.items()}[interval_label]
 
 MIN_CANDLES_FOR_MA50 = 50
 if interval == "1wk" and period in ("3mo", "6mo"):
     st.sidebar.warning(
         "⚠️ Interval Mingguan + periode pendek (3-6 bulan) menghasilkan candle < 50, "
         "MA50 & sinyal bisa muncul 'DATA KURANG'. Pilih periode 1y/2y untuk hasil optimal."
+    )
+elif interval == "1h" and period == "5d":
+    st.sidebar.warning(
+        "⚠️ Interval 1 Jam + periode 5 Hari menghasilkan candle < 50, "
+        "MA50 & sinyal bisa muncul 'DATA KURANG'. Pilih periode 1-2 Bulan untuk hasil optimal."
     )
 selected_tickers = st.sidebar.multiselect(
     "Watchlist", ALL_TICKERS, default=WATCHLIST,
