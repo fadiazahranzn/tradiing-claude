@@ -58,7 +58,12 @@ st.markdown(
         letter-spacing: -0.01em;
     }}
     .stApp {{
-        background-color: {COLOR_BG};
+        background:
+            radial-gradient(circle at 12% 8%, rgba(124, 92, 252, 0.05), transparent 42%),
+            radial-gradient(circle at 88% 15%, rgba(217, 70, 239, 0.045), transparent 40%),
+            radial-gradient(circle at 20% 92%, rgba(217, 70, 239, 0.035), transparent 38%),
+            radial-gradient(circle at 85% 85%, rgba(124, 92, 252, 0.04), transparent 42%),
+            {COLOR_BG};
     }}
 
     /* sidebar */
@@ -130,6 +135,36 @@ st.markdown(
     hr {{
         border-color: {COLOR_BORDER} !important;
     }}
+
+    /* komponen bersama (dipakai di Selamat Datang & Panduan) */
+    .hero-badge {{
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: .04em;
+        color: {COLOR_ACCENT};
+        background: {COLOR_ACCENT_SOFT};
+        border: 1px solid {COLOR_BORDER};
+        padding: 0.3rem 0.9rem;
+        border-radius: 999px;
+    }}
+    .sig-pill {{
+        display: inline-block;
+        font-weight: 700;
+        font-size: 0.82rem;
+        padding: 0.12rem 0.55rem;
+        border-radius: 999px;
+        margin: 0 0.1rem;
+    }}
+    .disclaimer-box {{
+        background: {COLOR_HOLD_SOFT};
+        border: 1px solid #FDE68A;
+        border-radius: 14px;
+        padding: 0.9rem 1.2rem;
+        color: {COLOR_HOLD};
+        font-size: 0.9rem;
+        line-height: 1.55;
+    }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -149,6 +184,28 @@ def style_chart(fig):
         dragmode="pan",
     )
     return fig
+
+
+@st.dialog("Chart", width="large")
+def _chart_dialog():
+    fig = st.session_state.get("_dialog_fig")
+    title = st.session_state.get("_dialog_title", "")
+    if fig is None:
+        return
+    if title:
+        st.subheader(title)
+    big_fig = go.Figure(fig)
+    big_fig.update_layout(height=650)
+    st.plotly_chart(big_fig, use_container_width=True, config={"scrollZoom": True})
+
+
+def chart_with_zoom(fig, title="", key="", height=None):
+    """Render chart + tombol perbesar (buka pop up dialog dengan versi lebih besar)."""
+    st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True}, key=f"chart_{key}")
+    if st.button("🔍 Perbesar", key=f"expand_{key}", use_container_width=True):
+        st.session_state["_dialog_fig"] = fig
+        st.session_state["_dialog_title"] = title
+        _chart_dialog()
 
 
 def _hex_to_rgba(hex_color, alpha=0.12):
@@ -361,11 +418,294 @@ def backtest_signals(df, hold_days=10):
 
 
 # ==========================================================
+# UI - WELCOME (layar pertama, tanpa sidebar)
+# ==========================================================
+if "started" not in st.session_state:
+    st.session_state.started = False
+
+if not st.session_state.started:
+    st.markdown(
+        f"""
+        <style>
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMain"],
+        .stApp {{
+            background:
+                radial-gradient(circle at 12% 8%, rgba(124, 92, 252, 0.18), transparent 42%),
+                radial-gradient(circle at 88% 15%, rgba(217, 70, 239, 0.16), transparent 40%),
+                radial-gradient(circle at 20% 92%, rgba(217, 70, 239, 0.12), transparent 38%),
+                radial-gradient(circle at 85% 85%, rgba(124, 92, 252, 0.14), transparent 42%),
+                {COLOR_BG} !important;
+        }}
+        .hero-wrap {{
+            padding: 3rem 1rem 1rem 1rem;
+            text-align: center;
+        }}
+        .hero-badge {{
+            display: inline-block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: .04em;
+            color: {COLOR_ACCENT};
+            background: {COLOR_ACCENT_SOFT};
+            border: 1px solid {COLOR_BORDER};
+            padding: 0.3rem 0.9rem;
+            border-radius: 999px;
+            margin-bottom: 1.2rem;
+        }}
+        .hero-title {{
+            font-family: "Sora", "Inter", sans-serif;
+            font-size: 2.6rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin: 0 0 0.9rem 0;
+            background: linear-gradient(90deg, {COLOR_ACCENT}, {COLOR_ACCENT_2});
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }}
+        .hero-sub {{
+            max-width: 700px;
+            margin: 0 auto;
+            color: {COLOR_MUTED};
+            font-size: 1.08rem;
+            line-height: 1.65;
+        }}
+        .hero-sub b {{ color: {COLOR_TEXT}; }}
+        .story-row {{
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 1.1rem;
+            max-width: 920px;
+            margin: 1.8rem auto 0 auto;
+            flex-wrap: wrap;
+        }}
+        .story-card {{
+            flex: 1;
+            min-width: 280px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(124, 92, 252, 0.16);
+            border-radius: 18px;
+            padding: 1.4rem 1.5rem;
+            text-align: left;
+        }}
+        .story-kicker {{
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: {COLOR_MUTED};
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }}
+        .story-text {{
+            font-size: 0.97rem;
+            color: {COLOR_TEXT};
+            line-height: 1.55;
+        }}
+        .story-arrow {{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: {COLOR_ACCENT};
+            padding: 0 0.2rem;
+        }}
+        .sig-pill {{
+            display: inline-block;
+            font-weight: 700;
+            font-size: 0.82rem;
+            padding: 0.12rem 0.55rem;
+            border-radius: 999px;
+            margin: 0 0.1rem;
+        }}
+        .stat-strip {{
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            flex-wrap: wrap;
+            margin: 2.2rem 0 2.5rem 0;
+            padding: 1.1rem 0;
+            border-top: 1px solid rgba(124, 92, 252, 0.15);
+            border-bottom: 1px solid rgba(124, 92, 252, 0.15);
+        }}
+        .stat-item {{
+            text-align: center;
+            min-width: 110px;
+        }}
+        .stat-number {{
+            font-family: "Sora", "Inter", sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, {COLOR_ACCENT}, {COLOR_ACCENT_2});
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: {COLOR_ACCENT};
+        }}
+        .stat-label {{
+            font-size: 0.78rem;
+            color: {COLOR_MUTED};
+            margin-top: 0.15rem;
+        }}
+        .feature-card {{
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(124, 92, 252, 0.18);
+            border-radius: 16px;
+            padding: 1.3rem 1.2rem;
+            height: 100%;
+            box-shadow: 0 4px 16px rgba(124, 92, 252, 0.06);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }}
+        .feature-card:hover {{
+            transform: translateY(-3px);
+            box-shadow: 0 10px 24px rgba(124, 92, 252, 0.16);
+        }}
+        .feature-icon {{
+            font-size: 1.6rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, {COLOR_ACCENT_SOFT}, #FCEEFB);
+            margin-bottom: 0.7rem;
+        }}
+        .feature-title {{
+            font-weight: 700;
+            font-size: 1rem;
+            color: {COLOR_TEXT};
+            margin-bottom: 0.35rem;
+        }}
+        .feature-desc {{
+            font-size: 0.88rem;
+            color: {COLOR_TEXT};
+            opacity: 0.85;
+            line-height: 1.5;
+        }}
+        .disclaimer-box {{
+            background: {COLOR_HOLD_SOFT};
+            border: 1px solid #FDE68A;
+            border-radius: 14px;
+            padding: 0.9rem 1.2rem;
+            color: {COLOR_HOLD};
+            font-size: 0.9rem;
+            line-height: 1.55;
+        }}
+        div[data-testid="stButton"] > button {{
+            background: linear-gradient(90deg, {COLOR_ACCENT}, {COLOR_ACCENT_2});
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 0.7rem 0;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(124, 92, 252, 0.3);
+        }}
+        div[data-testid="stButton"] > button:hover {{
+            filter: brightness(1.05);
+            box-shadow: 0 10px 26px rgba(124, 92, 252, 0.4);
+        }}
+        </style>
+
+        <div class="hero-wrap">
+            <span class="hero-badge">📊 PERSONAL STOCK ASSISTANT &nbsp;·&nbsp; IDX</span>
+            <div class="hero-title">Dashboard Rekomendasi<br>Trading Saham IDX</div>
+            <div class="hero-sub">
+                Dibuat untuk jawab pertanyaan yang paling sering bikin bingung tiap megang saham.
+            </div>
+            <div class="story-row">
+                <div class="story-card">
+                    <div class="story-kicker">😵‍💫 MASALAHNYA</div>
+                    <div class="story-text">
+                        Harga naik-turun tiap hari, dan tiap kali itu muncul pertanyaan yang sama:
+                        <b>beli lagi, tahan, atau jual?</b> Nebak-nebak doang bikin keputusan jadi
+                        gampang kebawa emosi.
+                    </div>
+                </div>
+                <div class="story-arrow">→</div>
+                <div class="story-card">
+                    <div class="story-kicker">🎯 SOLUSINYA</div>
+                    <div class="story-text">
+                        Tiap saham di watchlist otomatis dikasih sinyal
+                        <span class="sig-pill" style="color:{COLOR_BUY};background:{COLOR_BUY_SOFT}">▲ BUY</span>
+                        <span class="sig-pill" style="color:{COLOR_HOLD};background:{COLOR_HOLD_SOFT}">■ HOLD</span>
+                        <span class="sig-pill" style="color:{COLOR_SELL};background:{COLOR_SELL_SOFT}">▼ SELL</span>
+                        berdasarkan MA20/MA50, RSI(14), dan MACD — lengkap dengan histori seberapa
+                        akurat sinyal itu kalau dites ke data masa lalu.
+                    </div>
+                </div>
+            </div>
+            <div class="stat-strip">
+                <div class="stat-item">
+                    <div class="stat-number">{len(WATCHLIST)}</div>
+                    <div class="stat-label">Saham diawasi</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Indikator teknikal</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">BUY/SELL/HOLD</div>
+                    <div class="stat-label">Sinyal otomatis</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">Harian</div>
+                    <div class="stat-label">Update data</div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.write("")
+    features = [
+        ("📋", "Ringkasan Watchlist", "Semua saham + sinyal terkini dalam satu tabel, diurutkan BUY → HOLD → SELL."),
+        ("📈", "Tren 30 Hari", "Grafik harga 30 hari terakhir tiap saham, bisa di-zoom & digeser."),
+        ("🔁", "Backtest Sinyal", "Cek win rate sinyal BUY/SELL kalau dipakai di histori harga."),
+        ("🔍", "Detail per Saham", "Candlestick, RSI, MACD, dan volume lengkap per saham."),
+    ]
+    cols = st.columns(4)
+    for col, (icon, title, desc) in zip(cols, features):
+        with col:
+            st.markdown(
+                f"""
+                <div class="feature-card">
+                    <div class="feature-icon">{icon}</div>
+                    <div class="feature-title">{title}</div>
+                    <div class="feature-desc">{desc}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    st.write("")
+    st.write("")
+    d1, d2 = st.columns([5, 1.2])
+    with d1:
+        st.markdown(
+            """
+            <div class="disclaimer-box">
+                ⚠️ Semua sinyal di sini berbasis aturan teknikal sederhana (rule-based),
+                <b>bukan saran finansial</b>. Tetap cek data & pertimbangan sendiri sebelum
+                ambil keputusan trading.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with d2:
+        if st.button("Lanjut ke Panduan →", use_container_width=True, type="primary"):
+            st.session_state.started = True
+            st.rerun()
+    st.stop()
+
+# ==========================================================
 # UI - SIDEBAR
 # ==========================================================
 st.sidebar.title("📊 Dashboard Saham IDX")
-PAGES = ["Ringkasan Watchlist", "Tren 30 Hari", "Backtest Sinyal", "Detail per Saham", "Panduan"]
-page = st.sidebar.radio("Halaman", PAGES, label_visibility="collapsed")
+PAGES = ["Panduan", "Ringkasan Watchlist", "Tren 30 Hari", "Backtest Sinyal", "Detail per Saham"]
+page = st.sidebar.selectbox("Halaman", PAGES, index=0, label_visibility="collapsed")
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("⚙️ Pengaturan")
@@ -632,10 +972,7 @@ elif page == "Tren 30 Hari":
                             paper_bgcolor="rgba(0,0,0,0)",
                             dragmode="pan",
                         )
-                        st.plotly_chart(
-                            fig, use_container_width=True,
-                            config={"scrollZoom": True, "displayModeBar": False},
-                        )
+                        chart_with_zoom(fig, title=f"{t} — Tren 30 Hari", key=f"trend_{t}")
     else:
         st.info("Tidak ada data untuk ditampilkan.")
 
@@ -732,15 +1069,15 @@ elif page == "Detail per Saham":
                     increasing_line_color=COLOR_BUY, increasing_fillcolor=COLOR_BUY,
                     decreasing_line_color=COLOR_SELL, decreasing_fillcolor=COLOR_SELL,
                 ))
-                fig.add_trace(go.Scatter(x=df.index, y=df["MA20"], name="MA20", line=dict(width=1.3, color=COLOR_ACCENT)))
-                fig.add_trace(go.Scatter(x=df.index, y=df["MA50"], name="MA50", line=dict(width=1.3, color="#A855F7")))
+                fig.add_trace(go.Scatter(x=df.index, y=df["MA20"], name="MA20", line=dict(width=1.5, color=COLOR_ACCENT)))
+                fig.add_trace(go.Scatter(x=df.index, y=df["MA50"], name="MA50", line=dict(width=1.5, color="#F59E0B")))
                 fig.update_layout(
                     height=400, margin=dict(l=10, r=10, t=30, b=10),
                     xaxis_rangeslider_visible=False,
                     title=f"{ticker}.JK - Harga & Moving Average",
                 )
                 style_chart(fig)
-                st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
+                chart_with_zoom(fig, title=f"{ticker}.JK - Harga & Moving Average", key=f"price_{ticker}")
 
             # RSI, MACD & Volume chart
             col3, col4, col5 = st.columns(3)
@@ -751,17 +1088,17 @@ elif page == "Detail per Saham":
                 fig_rsi.add_hline(y=30, line_dash="dash", line_color=COLOR_BUY)
                 fig_rsi.update_layout(height=250, margin=dict(l=10, r=10, t=30, b=10), title="RSI (14)")
                 style_chart(fig_rsi)
-                st.plotly_chart(fig_rsi, use_container_width=True, config={"scrollZoom": True})
+                chart_with_zoom(fig_rsi, title=f"{ticker} — RSI (14)", key=f"rsi_{ticker}")
 
             with col4:
                 fig_macd = go.Figure()
                 fig_macd.add_trace(go.Scatter(x=df.index, y=df["MACD"], name="MACD", line=dict(color=COLOR_ACCENT)))
-                fig_macd.add_trace(go.Scatter(x=df.index, y=df["Signal"], name="Signal", line=dict(color="#A855F7")))
+                fig_macd.add_trace(go.Scatter(x=df.index, y=df["Signal"], name="Signal", line=dict(color="#F59E0B")))
                 hist_colors = [COLOR_BUY if v >= 0 else COLOR_SELL for v in df["MACD_Hist"]]
                 fig_macd.add_trace(go.Bar(x=df.index, y=df["MACD_Hist"], name="Histogram", marker_color=hist_colors))
                 fig_macd.update_layout(height=250, margin=dict(l=10, r=10, t=30, b=10), title="MACD")
                 style_chart(fig_macd)
-                st.plotly_chart(fig_macd, use_container_width=True, config={"scrollZoom": True})
+                chart_with_zoom(fig_macd, title=f"{ticker} — MACD", key=f"macd_{ticker}")
 
             with col5:
                 vol_avg20 = df["Volume"].rolling(20).mean()
@@ -782,81 +1119,242 @@ elif page == "Detail per Saham":
                     title = f"Volume ({arrow} {vol_pct:+.0f}% vs avg20)"
                 fig_vol.update_layout(height=250, margin=dict(l=10, r=10, t=30, b=10), title=title, showlegend=False)
                 style_chart(fig_vol)
-                st.plotly_chart(fig_vol, use_container_width=True, config={"scrollZoom": True})
+                chart_with_zoom(fig_vol, title=f"{ticker} — {title}", key=f"vol_{ticker}")
 
 # ==========================================================
 # HALAMAN: PANDUAN
 # ==========================================================
 elif page == "Panduan":
-    st.subheader("Panduan Membaca Dashboard")
+    st.markdown(
+        f"""
+        <style>
+        .pg-section-title {{
+            font-family: "Sora", "Inter", sans-serif;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: {COLOR_TEXT};
+            margin: 2rem 0 0.9rem 0;
+        }}
+        .ind-card {{
+            background: {COLOR_SURFACE};
+            border: 1px solid {COLOR_BORDER};
+            border-radius: 16px;
+            padding: 1.2rem 1.3rem;
+            height: 100%;
+        }}
+        .ind-icon {{
+            font-size: 1.4rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            margin-bottom: 0.6rem;
+        }}
+        .ind-title {{ font-weight: 700; color: {COLOR_TEXT}; margin-bottom: 0.3rem; }}
+        .ind-desc {{ font-size: 0.86rem; color: {COLOR_TEXT}; opacity: 0.8; line-height: 1.5; }}
 
-    st.markdown("### Indikator yang dipakai")
-    st.markdown(
-        "- **MA20 / MA50** — rata-rata harga penutupan 20 & 50 hari terakhir. "
-        "MA20 di atas MA50 menandakan tren jangka pendek sedang naik (uptrend), "
-        "dan sebaliknya.\n"
-        "- **RSI (14)** — Relative Strength Index, mengukur kecepatan naik/turunnya "
-        "harga dalam skala 0-100. Di bawah 30 = *oversold* (berpotensi rebound), "
-        "di atas 70 = *overbought* (waspada koreksi), di antaranya dianggap netral.\n"
-        "- **MACD** — selisih EMA12 dan EMA26 (garis MACD) dibandingkan dengan "
-        "EMA9 dari MACD itu sendiri (signal line). MACD di atas signal line = "
-        "momentum positif; di bawah = momentum negatif."
+        .score-table-wrap {{
+            background: {COLOR_SURFACE};
+            border: 1px solid {COLOR_BORDER};
+            border-radius: 16px;
+            padding: 1.1rem 1.3rem;
+        }}
+        .score-row {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.55rem 0;
+            border-bottom: 1px solid {COLOR_BORDER};
+            font-size: 0.88rem;
+        }}
+        .score-row:last-child {{ border-bottom: none; }}
+        .score-label {{ font-weight: 600; color: {COLOR_TEXT}; flex: 1.1; }}
+        .score-cond {{ flex: 1; color: {COLOR_TEXT}; opacity: 0.85; }}
+        .score-badge {{
+            font-weight: 700;
+            font-size: 0.78rem;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            white-space: nowrap;
+        }}
+
+        .result-row {{
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.1rem;
+            flex-wrap: wrap;
+        }}
+        .result-card {{
+            flex: 1;
+            min-width: 180px;
+            border-radius: 14px;
+            padding: 0.9rem 1.1rem;
+            text-align: center;
+        }}
+        .result-score {{ font-size: 0.78rem; opacity: 0.85; margin-top: 0.2rem; }}
+
+        .menu-row {{
+            display: flex;
+            align-items: flex-start;
+            gap: 0.9rem;
+            padding: 0.7rem 0;
+            border-bottom: 1px solid {COLOR_BORDER};
+        }}
+        .menu-row:last-child {{ border-bottom: none; }}
+        .menu-icon {{ font-size: 1.2rem; width: 28px; text-align: center; }}
+        .menu-title {{ font-weight: 700; color: {COLOR_TEXT}; font-size: 0.92rem; }}
+        .menu-desc {{ font-size: 0.85rem; color: {COLOR_TEXT}; opacity: 0.75; line-height: 1.45; }}
+        </style>
+
+        <div class="hero-badge" style="display:inline-block; margin-bottom:0.6rem;">📖 PANDUAN</div>
+        <div style="font-family:'Sora','Inter',sans-serif; font-size:1.9rem; font-weight:800; color:{COLOR_TEXT}; margin-bottom:0.3rem;">
+            Cara Membaca Dashboard
+        </div>
+        <div style="color:{COLOR_TEXT}; opacity:0.75; font-size:0.98rem; max-width:720px;">
+            Semua sinyal di dashboard ini dihitung dari 3 indikator teknikal klasik. Berikut cara bacanya.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    st.markdown("### Cara sinyal BUY/SELL/HOLD dihitung")
+    st.markdown('<div class="pg-section-title">📐 Indikator yang dipakai</div>', unsafe_allow_html=True)
+    ind_cols = st.columns(3)
+    indicators = [
+        ("📈", COLOR_ACCENT_SOFT, "MA20 / MA50",
+         "Rata-rata harga penutupan 20 & 50 hari terakhir. MA20 di atas MA50 = tren jangka pendek "
+         "sedang naik (uptrend), dan sebaliknya."),
+        ("⚡", "#F1EDFB", "RSI (14)",
+         "Relative Strength Index, mengukur kecepatan naik/turun harga (skala 0-100). "
+         "< 30 = oversold (potensi rebound), > 70 = overbought (waspada koreksi)."),
+        ("🌊", "#FEF3C7", "MACD",
+         "Selisih EMA12 & EMA26 (garis MACD) dibanding EMA9 dari MACD itu sendiri (signal line). "
+         "MACD di atas signal = momentum positif."),
+    ]
+    for col, (icon, bg, title, desc) in zip(ind_cols, indicators):
+        with col:
+            st.markdown(
+                f"""
+                <div class="ind-card">
+                    <div class="ind-icon" style="background:{bg}">{icon}</div>
+                    <div class="ind-title">{title}</div>
+                    <div class="ind-desc">{desc}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    st.markdown('<div class="pg-section-title">🧮 Cara sinyal BUY/SELL/HOLD dihitung</div>', unsafe_allow_html=True)
     st.markdown(
-        "Setiap indikator menyumbang skor **+1 / 0 / -1**, lalu dijumlah jadi skor "
-        "total (rentang **-3 sampai +3**):"
+        "Setiap indikator menyumbang skor **+1 / 0 / -1**, lalu dijumlah jadi skor total (rentang **-3 sampai +3**):"
     )
     st.markdown(
-        "| Indikator | +1 jika | -1 jika |\n"
-        "|---|---|---|\n"
-        "| Trend (MA20 vs MA50) | MA20 > MA50 | MA20 < MA50 |\n"
-        "| RSI | RSI < 30 (oversold) | RSI > 70 (overbought) |\n"
-        "| MACD | MACD > Signal | MACD < Signal |\n"
+        f"""
+        <div class="score-table-wrap">
+            <div class="score-row">
+                <div class="score-label">Trend (MA20 vs MA50)</div>
+                <div class="score-cond">MA20 &gt; MA50</div>
+                <div class="score-badge" style="color:{COLOR_BUY};background:{COLOR_BUY_SOFT}">+1</div>
+                <div class="score-cond">MA20 &lt; MA50</div>
+                <div class="score-badge" style="color:{COLOR_SELL};background:{COLOR_SELL_SOFT}">-1</div>
+            </div>
+            <div class="score-row">
+                <div class="score-label">RSI</div>
+                <div class="score-cond">RSI &lt; 30 (oversold)</div>
+                <div class="score-badge" style="color:{COLOR_BUY};background:{COLOR_BUY_SOFT}">+1</div>
+                <div class="score-cond">RSI &gt; 70 (overbought)</div>
+                <div class="score-badge" style="color:{COLOR_SELL};background:{COLOR_SELL_SOFT}">-1</div>
+            </div>
+            <div class="score-row">
+                <div class="score-label">MACD</div>
+                <div class="score-cond">MACD &gt; Signal</div>
+                <div class="score-badge" style="color:{COLOR_BUY};background:{COLOR_BUY_SOFT}">+1</div>
+                <div class="score-cond">MACD &lt; Signal</div>
+                <div class="score-badge" style="color:{COLOR_SELL};background:{COLOR_SELL_SOFT}">-1</div>
+            </div>
+        </div>
+        <div class="result-row">
+            <div class="result-card" style="background:{COLOR_BUY_SOFT}">
+                <div class="sig-pill" style="color:{COLOR_BUY};background:transparent;font-size:1rem;padding:0">▲ BUY</div>
+                <div class="result-score" style="color:{COLOR_BUY}">Skor total ≥ +2</div>
+            </div>
+            <div class="result-card" style="background:{COLOR_HOLD_SOFT}">
+                <div class="sig-pill" style="color:{COLOR_HOLD};background:transparent;font-size:1rem;padding:0">■ HOLD</div>
+                <div class="result-score" style="color:{COLOR_HOLD}">Selain BUY/SELL</div>
+            </div>
+            <div class="result-card" style="background:{COLOR_SELL_SOFT}">
+                <div class="sig-pill" style="color:{COLOR_SELL};background:transparent;font-size:1rem;padding:0">▼ SELL</div>
+                <div class="result-score" style="color:{COLOR_SELL}">Skor total ≤ -2</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    st.markdown(
-        "Skor total lalu dipetakan ke sinyal:\n"
-        "- **Skor ≥ +2 → BUY**\n"
-        "- **Skor ≤ -2 → SELL**\n"
-        "- **Selain itu → HOLD**\n\n"
-        "\"Kekuatan\" sinyal (dots ●○ atau persen %) menunjukkan seberapa besar "
-        "`|skor|` relatif terhadap maksimum 3 — makin banyak dot terisi/persen "
-        "makin banyak indikator yang sepakat."
-    )
-    st.markdown(
-        "Catatan: RSI di rentang 30-70 tidak menambah/mengurangi skor (kontribusi 0), "
-        "jadi sinyal BUY/SELL murni bisa terjadi walau RSI netral, asal trend & MACD "
-        "sudah searah."
+    st.caption(
+        "\"Kekuatan\" sinyal (dots ●○ atau persen %) menunjukkan seberapa besar |skor| relatif terhadap "
+        "maksimum 3 — makin banyak dot terisi/persen makin banyak indikator yang sepakat. Catatan: RSI di "
+        "rentang 30-70 kontribusinya 0, jadi sinyal BUY/SELL murni bisa terjadi walau RSI netral, asal "
+        "trend & MACD sudah searah."
     )
 
-    st.markdown("### Menu di sidebar")
-    st.markdown(
-        "- **Periode data** — rentang histori yang diambil dari Yahoo Finance "
-        "(mis. 6 Bulan Terakhir). Periode terlalu pendek bisa membuat MA50 belum "
-        "terbentuk (`DATA KURANG`) — pilih minimal 6 bulan, idealnya 1y/2y.\n"
-        "- **Interval candle** — granularitas candle (Harian, dst).\n"
-        "- **Watchlist** — daftar kode saham (tanpa `.JK`) yang mau dipantau.\n"
-        "- **Backtest: periode holding** — dipakai khusus di halaman Backtest Sinyal: "
-        "setelah sinyal BUY/SELL historis muncul, harga dicek N candle ke depan "
-        "untuk menilai menang/kalah."
-    )
+    menu1, menu2 = st.columns(2)
+    with menu1:
+        st.markdown('<div class="pg-section-title">⚙️ Menu di sidebar</div>', unsafe_allow_html=True)
+        sidebar_items = [
+            ("📅", "Periode data", "Rentang histori dari Yahoo Finance. Terlalu pendek bisa bikin MA50 "
+             "belum terbentuk (DATA KURANG) — pilih minimal 6 bulan, idealnya 1y/2y."),
+            ("🕯️", "Interval candle", "Granularitas candle (Harian, dst)."),
+            ("⭐", "Watchlist", "Daftar kode saham (tanpa .JK) yang mau dipantau."),
+            ("🔁", "Backtest: periode holding", "Khusus halaman Backtest Sinyal — setelah sinyal "
+             "BUY/SELL historis muncul, harga dicek N candle ke depan untuk menilai menang/kalah."),
+        ]
+        for icon, title, desc in sidebar_items:
+            st.markdown(
+                f"""
+                <div class="menu-row">
+                    <div class="menu-icon">{icon}</div>
+                    <div>
+                        <div class="menu-title">{title}</div>
+                        <div class="menu-desc">{desc}</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-    st.markdown("### Halaman yang tersedia")
-    st.markdown(
-        "- **Ringkasan Watchlist** — tabel semua saham dengan sinyal, kekuatan, "
-        "dan RSI terkini, diurutkan BUY → HOLD → SELL.\n"
-        "- **Tren 30 Hari** — grafik harga 30 hari terakhir per saham, diurutkan "
-        "dari performa terbaik.\n"
-        "- **Backtest Sinyal** — simulasi naif performa sinyal BUY/SELL historis.\n"
-        "- **Detail per Saham** — candlestick + MA, RSI, MACD, dan volume lengkap "
-        "per saham."
-    )
+    with menu2:
+        st.markdown('<div class="pg-section-title">🗺️ Halaman yang tersedia</div>', unsafe_allow_html=True)
+        page_items = [
+            ("📋", "Ringkasan Watchlist", "Tabel semua saham dengan sinyal, kekuatan, dan RSI terkini, "
+             "diurutkan BUY → HOLD → SELL."),
+            ("📈", "Tren 30 Hari", "Grafik harga 30 hari terakhir per saham, diurutkan dari performa terbaik."),
+            ("🔁", "Backtest Sinyal", "Simulasi naif performa sinyal BUY/SELL historis."),
+            ("🔍", "Detail per Saham", "Candlestick + MA, RSI, MACD, dan volume lengkap per saham."),
+        ]
+        for icon, title, desc in page_items:
+            st.markdown(
+                f"""
+                <div class="menu-row">
+                    <div class="menu-icon">{icon}</div>
+                    <div>
+                        <div class="menu-title">{title}</div>
+                        <div class="menu-desc">{desc}</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-    st.warning(
-        "⚠️ **Disclaimer**: Seluruh sinyal di dashboard ini berbasis aturan "
-        "teknikal sederhana (rule-based), BUKAN saran finansial dan BUKAN hasil "
-        "machine learning. Backtest bersifat naif (tanpa biaya transaksi/slippage, "
-        "dievaluasi in-sample). Selalu lakukan riset sendiri sebelum mengambil "
-        "keputusan trading."
+    st.write("")
+    st.markdown(
+        """
+        <div class="disclaimer-box">
+            ⚠️ <b>Disclaimer</b>: Seluruh sinyal di dashboard ini berbasis aturan teknikal sederhana
+            (rule-based), <b>BUKAN saran finansial</b> dan BUKAN hasil machine learning. Backtest
+            bersifat naif (tanpa biaya transaksi/slippage, dievaluasi in-sample). Selalu lakukan riset
+            sendiri sebelum mengambil keputusan trading.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
